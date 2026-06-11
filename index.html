@@ -303,35 +303,35 @@ function saveLog() {
   if (!date) { alert('日付を入力してください'); return; }
   const selectedChips = document.querySelectorAll('#log-tech-chips .tech-chip.selected');
   const techIds = Array.from(selectedChips).map(c => Number(c.dataset.id));
-  const log = {
-    id: Date.now(),
-    date,
-    className: document.getElementById('log-class').value,
-    duration: selectedDuration,
-    techniques: techIds,
-    sparring: document.getElementById('log-sparring').value,
-    memo: document.getElementById('log-memo').value
-  };
-  state.logs.unshift(log);
-  save();
-  closeModal('modal-log');
-  render();
+  const saveBtn = document.getElementById('save-log-btn');
+  const editId = saveBtn.dataset.editId;
+  const data = { date, className: document.getElementById('log-class').value, duration: selectedDuration, techniques: techIds, sparring: document.getElementById('log-sparring').value, memo: document.getElementById('log-memo').value };
+  if (editId) {
+    const idx = state.logs.findIndex(l => l.id === Number(editId));
+    if (idx !== -1) state.logs[idx] = { ...state.logs[idx], ...data };
+    delete saveBtn.dataset.editId;
+    document.querySelector('#modal-log .modal-title').textContent = '練習ログを追加';
+  } else {
+    state.logs.unshift({ id: Date.now(), ...data });
+  }
+  save(); closeModal('modal-log'); render();
 }
 
 function saveTech() {
   const name = document.getElementById('tech-name').value.trim();
   if (!name) { alert('技名を入力してください'); return; }
-  const tech = {
-    id: Date.now(),
-    name,
-    category: document.getElementById('tech-category').value,
-    videoUrl: document.getElementById('tech-video').value.trim(),
-    memo: document.getElementById('tech-memo').value.trim()
-  };
-  state.techniques.push(tech);
-  save();
-  closeModal('modal-tech');
-  render();
+  const saveBtn = document.getElementById('save-tech-btn');
+  const editId = saveBtn.dataset.editId;
+  const data = { name, category: document.getElementById('tech-category').value, videoUrl: document.getElementById('tech-video').value.trim(), memo: document.getElementById('tech-memo').value.trim() };
+  if (editId) {
+    const idx = state.techniques.findIndex(t => t.id === Number(editId));
+    if (idx !== -1) state.techniques[idx] = { ...state.techniques[idx], ...data };
+    delete saveBtn.dataset.editId;
+    document.querySelector('#modal-tech .modal-title').textContent = '技を追加';
+  } else {
+    state.techniques.push({ id: Date.now(), ...data });
+  }
+  save(); closeModal('modal-tech'); render();
 }
 
 function addClass() {
@@ -369,7 +369,10 @@ function viewLog(id) {
     ${techHTML?`<div><p class="form-label">習った技</p><div class="log-techniques" style="margin-bottom:14px;">${techHTML}</div></div>`:''}
     ${log.sparring?`<div><p class="form-label">スパーリング</p><p style="font-size:14px;margin-bottom:14px;">${log.sparring}</p></div>`:''}
     ${log.memo?`<div><p class="form-label">メモ</p><p style="font-size:14px;line-height:1.7;margin-bottom:14px;">${log.memo}</p></div>`:''}
-    <button type="button" class="btn btn-danger" style="width:100%;margin-top:8px;" data-delete-log="${log.id}">この記録を削除</button>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button type="button" class="btn btn-ghost" style="flex:1;" data-edit-log="${log.id}">編集</button>
+      <button type="button" class="btn btn-danger" style="flex:1;" data-delete-log="${log.id}">削除</button>
+    </div>
     <button type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;" data-close="modal-view-log">閉じる</button>`;
   openModal('modal-view-log');
 }
@@ -391,9 +394,70 @@ function viewTech(id) {
     </div>
     ${tech.memo?`<div><p class="form-label">メモ</p><p style="font-size:14px;line-height:1.7;margin-bottom:14px;">${tech.memo}</p></div>`:''}
     ${vidId?`<div><p class="form-label">参考動画</p><div class="video-container"><iframe src="https://www.youtube.com/embed/${vidId}" allowfullscreen></iframe></div></div>`:tech.videoUrl?`<a href="${tech.videoUrl}" target="_blank" style="color:var(--gold);font-size:13px;">▶ 動画を見る</a>`:''}
-    <button type="button" class="btn btn-danger" style="width:100%;margin-top:18px;" data-delete-tech="${tech.id}">この技を削除</button>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button type="button" class="btn btn-ghost" style="flex:1;" data-edit-tech="${tech.id}">編集</button>
+      <button type="button" class="btn btn-danger" style="flex:1;" data-delete-tech="${tech.id}">削除</button>
+    </div>
     <button type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;" data-close="modal-view-tech">閉じる</button>`;
   openModal('modal-view-tech');
+}
+
+function editLog(id) {
+  const log = state.logs.find(l => l.id === id);
+  if (!log) return;
+  closeModal('modal-view-log');
+
+  // Populate form with existing data
+  document.getElementById('log-date').value = log.date;
+  document.getElementById('log-sparring').value = log.sparring || '';
+  document.getElementById('log-memo').value = log.memo || '';
+
+  // Duration
+  selectedDuration = log.duration || 0;
+  document.getElementById('dur-45').classList.toggle('selected', selectedDuration === 45);
+  document.getElementById('dur-90').classList.toggle('selected', selectedDuration === 90);
+
+  // Class
+  const sel = document.getElementById('log-class');
+  sel.innerHTML = '<option value="">クラスを選択</option>';
+  state.classes.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  sel.value = log.className || '';
+
+  // Tech chips
+  const grid = document.getElementById('log-tech-chips');
+  grid.innerHTML = '';
+  if (state.techniques.length === 0) {
+    grid.innerHTML = '<span style="color:var(--muted);font-size:12px;">先に技ライブラリに技を追加してください</span>';
+  } else {
+    state.techniques.forEach(t => {
+      const chip = document.createElement('div');
+      chip.className = 'tech-chip' + ((log.techniques||[]).includes(t.id) ? ' selected' : '');
+      chip.textContent = t.name;
+      chip.dataset.id = String(t.id);
+      chip.addEventListener('click', function() { this.classList.toggle('selected'); });
+      grid.appendChild(chip);
+    });
+  }
+
+  // Switch save button to update mode
+  document.getElementById('save-log-btn').dataset.editId = String(id);
+  document.querySelector('#modal-log .modal-title').textContent = '練習ログを編集';
+  openModal('modal-log');
+}
+
+function editTech(id) {
+  const tech = state.techniques.find(t => t.id === id);
+  if (!tech) return;
+  closeModal('modal-view-tech');
+
+  document.getElementById('tech-name').value = tech.name;
+  document.getElementById('tech-category').value = tech.category;
+  document.getElementById('tech-video').value = tech.videoUrl || '';
+  document.getElementById('tech-memo').value = tech.memo || '';
+
+  document.getElementById('save-tech-btn').dataset.editId = String(id);
+  document.querySelector('#modal-tech .modal-title').textContent = '技を編集';
+  openModal('modal-tech');
 }
 
 function render() {
@@ -531,6 +595,10 @@ document.addEventListener('click', function(e) {
   if (logCard) { viewLog(Number(logCard.dataset.viewLog)); return; }
   const techCard = t.closest('[data-view-tech]');
   if (techCard) { viewTech(Number(techCard.dataset.viewTech)); return; }
+
+  // Edit
+  if (t.dataset.editLog)  { editLog(Number(t.dataset.editLog)); return; }
+  if (t.dataset.editTech) { editTech(Number(t.dataset.editTech)); return; }
 
   // Delete
   if (t.dataset.deleteLog) {
