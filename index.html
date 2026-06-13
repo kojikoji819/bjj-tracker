@@ -177,7 +177,11 @@ select option { background: var(--surface2); }
 <div class="modal-overlay" id="modal-tech">
   <div class="modal">
     <div class="modal-title">技を追加</div>
-    <div class="form-group"><label class="form-label">技名</label><input type="text" id="tech-name" placeholder="例：クローズドガード"></div>
+    <div class="form-group">
+      <label class="form-label">技名</label>
+      <input type="text" id="tech-name" placeholder="例：クローズドガード" autocomplete="off">
+      <div id="tech-suggest" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;"></div>
+    </div>
     <div class="form-group">
       <label class="form-label">カテゴリ</label>
       <select id="tech-category">
@@ -470,7 +474,8 @@ function render() {
 function renderLogs() {
   const el = document.getElementById('log-list');
   if (!state.logs.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">まだ練習記録がありません<br>右上の「+ 記録」から追加しましょう</div></div>'; return; }
-  el.innerHTML = state.logs.map(log => {
+  const sorted = [...state.logs].sort((a,b) => b.date.localeCompare(a.date));
+  el.innerHTML = sorted.map(log => {
     const techHTML = (log.techniques||[]).map(tid => {
       const t = state.techniques.find(t => t.id === tid);
       return t ? `<span class="belt-badge ${CATEGORIES[t.category]?.cls||'belt-other'}">${t.name}</span>` : '';
@@ -622,7 +627,93 @@ document.addEventListener('click', function(e) {
   if (overlay && t === overlay) { overlay.classList.remove('open'); return; }
 });
 
+// ── BJJ Technique Database ─────────────────────────────────────
+const BJJ_TECHS = [
+  // ガード
+  { name:'クローズドガード', category:'guard', desc:'相手の腰に両脚を絡めてロックするガード。脚を解いて攻撃を仕掛ける。ヒップをずらしてアングルを作ることが重要。' },
+  { name:'オープンガード', category:'guard', desc:'両脚を相手に絡めず開いた状態のガード。デラヒーバ・スパイダー・ラッソーなど多様な派生形がある。' },
+  { name:'ハーフガード', category:'guard', desc:'相手の片脚だけを両脚で挟んだガード。アンダーフックを取ってスイープや立ち上がりを狙う。' },
+  { name:'バタフライガード', category:'guard', desc:'両足のフックを相手の内腿に引っ掛けたガード。スイープや引き込みに優れる。' },
+  { name:'デラヒーバガード', category:'guard', desc:'相手の外側から片脚を絡めるガード。背中を取ることやベリンボロへの移行が得意。' },
+  { name:'スパイダーガード', category:'guard', desc:'両手で相手の袖をつかみ両足で相手の腕を押すガード。距離を保ちながらスイープや三角絞めを狙う。' },
+  { name:'ラッソーガード', category:'guard', desc:'片腕を相手の腕に巻き付けるガード。コントロールが強く袖なしでは使いにくい。' },
+  { name:'Xガード', category:'guard', desc:'相手の片脚を股下からXの形でコントロールするガード。スイープ力が非常に高い。' },
+  { name:'スーパーデラヒーバ', category:'guard', desc:'デラヒーバの発展形。相手の腰を引き付け背中取りやスイープを狙う。' },
+  { name:'50/50ガード', category:'guard', desc:'互いに相手の脚を絡め合う状態。ヒールフックへの移行が得意。' },
+  { name:'ワームガード', category:'guard', desc:'道着の裾を使った複雑なラッソー変形。強力なコントロールとスイープを持つ。' },
+  // パス
+  { name:'ニーオンベリー', category:'pass', desc:'相手の腹部に膝を乗せてコントロールするポジション。サイドからマウントへの足がかりになる。' },
+  { name:'トレアナパス', category:'pass', desc:'相手の脚を一方向に押しながら反対側に回り込むガードパス。スピードが重要。' },
+  { name:'スタッキングパス', category:'pass', desc:'相手の脚を頭方向に押し重ねてパスするテクニック。三角絞めの返しにも使われる。' },
+  { name:'レッグドラッグ', category:'pass', desc:'相手の脚を引きずるようにしてサイドを取るパス。ガードリカバリーを潰す効果がある。' },
+  { name:'バルセロナパス', category:'pass', desc:'ダブルアンダーから腰を引いてパスするテクニック。スペースを作らせない圧力系パス。' },
+  { name:'Xパス', category:'pass', desc:'相手の脚をクロスさせて固定しながらパスする。オープンガードへの対処として有効。' },
+  // テイクダウン
+  { name:'シングルレッグ', category:'takedown', desc:'相手の片脚を取り倒すテイクダウン。内側・外側からのフィニッシュ方法が複数ある。' },
+  { name:'ダブルレッグ', category:'takedown', desc:'相手の両脚を取り倒すテイクダウン。レベルチェンジして相手の腰を抱える。' },
+  { name:'内股', category:'takedown', desc:'柔道由来の内股投げ。相手の内腿を跳ね上げて投げる。' },
+  { name:'大外刈り', category:'takedown', desc:'柔道由来の大外刈り。相手の支持脚を外から刈り取る。' },
+  { name:'払腰', category:'takedown', desc:'腰を使って相手を払い投げるテイクダウン。柔道的な崩しが重要。' },
+  { name:'ヒップトス', category:'takedown', desc:'背負い投げ系のテイクダウン。相手の腕をコントロールしてヒップを当てて投げる。' },
+  { name:'アンクルピック', category:'takedown', desc:'相手の足首を拾い上げて倒すテイクダウン。引き込みと組み合わせて使われることが多い。' },
+  // サブミッション
+  { name:'アームバー（腕十字）', category:'submission', desc:'相手の腕を伸ばして肘関節を極める技。ガード・マウント・バックなど多くのポジションから狙える。' },
+  { name:'三角絞め', category:'submission', desc:'脚で三角形を作り相手の首と腕を締める技。クローズドガードからが最も基本的。' },
+  { name:'オモプラッタ', category:'submission', desc:'脚で相手の肩関節を極める技。パスを防ぎながら攻撃できる。' },
+  { name:'ギロチン', category:'submission', desc:'相手の首を腕で締める絞め技。立ちの状態から引き込みながら使うことが多い。' },
+  { name:'リアネイキッドチョーク', category:'submission', desc:'バックポジションから首を絞る最も決定率の高い技のひとつ。首の側面を圧迫する。' },
+  { name:'ダースチョーク', category:'submission', desc:'相手の首と腕を抱え込む絞め技。ガードパスを試みる相手に仕掛けやすい。' },
+  { name:'ノースサウスチョーク', category:'submission', desc:'ノースサウスポジションから首を絞る技。肩と腕で締める。' },
+  { name:'キムラ', category:'submission', desc:'肩関節を極める技。相手の手首を取り逆の腕で挟んで固定する。' },
+  { name:'アメリカーナ', category:'submission', desc:'マウントやサイドから使う肩関節技。腕をL字に曲げて固定する。' },
+  { name:'ヒールフック', category:'submission', desc:'かかとを使って膝関節を極める危険な技。インサイド・アウトサイドがある。試合ルールを確認すること。' },
+  { name:'カーフスライサー', category:'submission', desc:'ふくらはぎに膝を押し付けて極める技。ハーフガード等から狙える。' },
+  { name:'クロスカラーチョーク', category:'submission', desc:'道着の襟を両手でクロスして絞める技。マウントやガードから狙える。' },
+  { name:'ボウアンドアロー', category:'submission', desc:'バックから道着を使って絞める技。コントロールが強固で外れにくい。' },
+  // エスケープ
+  { name:'ブリッジアンドロール（ウパ）', category:'escape', desc:'マウントからのエスケープ。ブリッジして相手を転がすシンプルかつ有効な逃げ方。' },
+  { name:'エルボーニーエスケープ（シュリンプ）', category:'escape', desc:'肘と膝を使いスペースを作ってガードを回復するエスケープ。最も基本的な動きのひとつ。' },
+  { name:'バックエスケープ', category:'escape', desc:'バックポジションを取られた状態から逃げる技術。ヒップを落としてサイドに回る。' },
+  { name:'サイドコントロールエスケープ', category:'escape', desc:'サイドポジションから逃げる技術。ニーシールドを作りガードを回復する。' },
+  { name:'タートルエスケープ', category:'escape', desc:'亀の姿勢から逃げる技術。ロールやシットアウトで相手のコントロールを外す。' },
+];
+
+// Autocomplete
+function initAutocomplete() {
+  const input = document.getElementById('tech-name');
+  const suggest = document.getElementById('tech-suggest');
+  if (!input || !suggest) return;
+
+  input.addEventListener('input', function() {
+    const val = this.value.trim();
+    if (!val) { suggest.style.display = 'none'; return; }
+    const matches = BJJ_TECHS.filter(t => t.name.includes(val));
+    if (!matches.length) { suggest.style.display = 'none'; return; }
+    suggest.innerHTML = matches.slice(0,8).map(t =>
+      `<div data-suggest-name="${t.name}" data-suggest-cat="${t.category}" data-suggest-desc="${t.desc}" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>${t.name}</span>
+        <span class="belt-badge ${CATEGORIES[t.category]?.cls||'belt-other'}" style="margin-left:6px;font-size:10px;">${CATEGORIES[t.category]?.label||''}</span>
+      </div>`
+    ).join('');
+    suggest.style.display = 'block';
+  });
+
+  suggest.addEventListener('click', function(e) {
+    const item = e.target.closest('[data-suggest-name]');
+    if (!item) return;
+    input.value = item.dataset.suggestName;
+    document.getElementById('tech-category').value = item.dataset.suggestCat;
+    document.getElementById('tech-memo').value = item.dataset.suggestDesc;
+    suggest.style.display = 'none';
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!suggest.contains(e.target) && e.target !== input) suggest.style.display = 'none';
+  });
+}
+
 load();
+initAutocomplete();
 showPage('log');
 </script>
 </body>
