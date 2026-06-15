@@ -712,7 +712,7 @@ function calcAvgInterval() {
 
 // ── AI Functions ──────────────────────────────────────────────────
 async function callAI(prompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://bjj-api.hachiichikyu819.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
@@ -1016,7 +1016,7 @@ function chatSend(text) {
   chatMessages.push({ role: 'user', content: text });
   const typing = chatTyping();
   chatLoading = true;
-  fetch('https://api.anthropic.com/v1/messages', {
+  fetch('https://bjj-api.hachiichikyu819.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: CHAT_SYSTEM, messages: chatMessages })
