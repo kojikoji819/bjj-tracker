@@ -95,7 +95,9 @@ select option { background: var(--surface2); }
 </div>
 
 <div class="page" id="page-dash">
-  <p class="section-title">ダッシュボード</p>
+  <p class="section-title">レポート</p>
+
+  <!-- Stats grid -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
     <div class="card" style="text-align:center;"><div class="form-label">トータル練習時間</div><div id="stat-total-hours" style="font-size:26px;font-weight:800;color:var(--gold);">0<span style="font-size:12px;color:var(--muted);"> h</span></div></div>
     <div class="card" style="text-align:center;"><div class="form-label">トータル練習回数</div><div id="stat-total-count" style="font-size:26px;font-weight:800;color:var(--gold);">0<span style="font-size:12px;color:var(--muted);"> 回</span></div></div>
@@ -104,9 +106,31 @@ select option { background: var(--surface2); }
     <div class="card" style="text-align:center;"><div class="form-label">習得技数</div><div id="stat-tech-count" style="font-size:26px;font-weight:800;">0<span style="font-size:12px;color:var(--muted);"> 技</span></div></div>
     <div class="card" style="text-align:center;"><div class="form-label">練習済み技数</div><div id="stat-practiced-count" style="font-size:26px;font-weight:800;">0<span style="font-size:12px;color:var(--muted);"> 技</span></div></div>
   </div>
+
+  <!-- Growth insights -->
+  <div class="card" style="margin-bottom:10px;" id="growth-insights"></div>
+
+  <!-- Monthly chart -->
   <div class="card" style="margin-bottom:10px;"><div class="form-label" style="margin-bottom:12px;">月別練習回数（過去6ヶ月）</div><div id="chart-monthly"></div></div>
+
+  <!-- Cumulative hours chart -->
+  <div class="card" style="margin-bottom:10px;"><div class="form-label" style="margin-bottom:12px;">累計練習時間の推移</div><div id="chart-cumulative"></div></div>
+
+  <!-- Category breakdown -->
   <div class="card" style="margin-bottom:10px;"><div class="form-label" style="margin-bottom:12px;">習った技の種類</div><div id="stat-categories"></div></div>
+
+  <!-- Top techniques -->
+  <div class="card" style="margin-bottom:10px;"><div class="form-label" style="margin-bottom:12px;">最も練習した技 TOP5</div><div id="stat-top-techs"></div></div>
+
+  <!-- Class breakdown -->
   <div class="card" style="margin-bottom:10px;"><div class="form-label" style="margin-bottom:12px;">クラス別練習時間</div><div id="stat-classes"></div></div>
+
+  <!-- AI Growth Summary -->
+  <div class="card" style="margin-bottom:10px;">
+    <div class="form-label" style="margin-bottom:10px;">AI成長分析</div>
+    <div id="ai-growth-result" style="display:none;font-size:13px;line-height:1.7;color:var(--white);margin-bottom:12px;"></div>
+    <button type="button" class="btn btn-primary" id="ai-growth-btn">🤖 AIに成長傾向を分析してもらう</button>
+  </div>
 </div>
 
 <div class="page" id="page-master">
@@ -131,6 +155,28 @@ select option { background: var(--surface2); }
   </div>
 </div>
 
+<!-- Chat Page -->
+<div class="page" id="page-chat" style="padding:0;display:none;flex-direction:column;height:calc(100vh - 120px);">
+  <div style="padding:10px 16px 0;flex-shrink:0;">
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;" id="chat-chips"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:12px;" id="chat-area">
+    <div id="chat-empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 24px;color:var(--muted);gap:12px;">
+      <div style="font-size:44px;opacity:0.6;">🥋</div>
+      <div style="font-size:16px;font-weight:700;color:var(--white);">何でも聞いてください</div>
+      <div style="font-size:13px;line-height:1.7;">技の掛け方・ポジション・対処法など<br>BJJに関することなら何でも答えます</div>
+    </div>
+  </div>
+  <div style="background:var(--surface);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;">
+    <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:20px;display:flex;align-items:flex-end;padding:8px 14px;" id="chat-input-wrap">
+      <textarea id="chat-input" rows="1" placeholder="例：三角絞めの掛け方を教えて" style="flex:1;background:none;border:none;outline:none;color:var(--white);font-family:inherit;font-size:14px;resize:none;max-height:120px;line-height:1.5;scrollbar-width:none;"></textarea>
+    </div>
+    <button id="chat-send" style="width:38px;height:38px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0d1117"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <button class="nav-item active" id="nav-log">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -143,6 +189,10 @@ select option { background: var(--surface2); }
   <button class="nav-item" id="nav-dash">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     <span class="nav-label">レポート</span>
+  </button>
+  <button class="nav-item" id="nav-chat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span class="nav-label">チャット</span>
   </button>
   <button class="nav-item" id="nav-master">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -248,11 +298,17 @@ function getYouTubeId(url) {
 
 function showPage(page) {
   currentPage = page;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  const pageEl = document.getElementById('page-' + page);
+  if (page === 'chat') {
+    pageEl.style.display = 'flex';
+  } else {
+    pageEl.style.display = 'block';
+    pageEl.classList.add('active');
+  }
   document.getElementById('nav-' + page).classList.add('active');
-  const titles = { log: '練習記録', tech: '技ライブラリ', dash: 'レポート', master: '設定' };
+  const titles = { log: '練習記録', tech: '技ライブラリ', dash: 'レポート', chat: 'テクニック検索', master: '設定' };
   document.getElementById('header-sub').textContent = titles[page] || '';
   const addBtn = document.getElementById('add-btn');
   if (page === 'log')  { addBtn.style.display = ''; addBtn.textContent = '+ 記録'; }
@@ -373,7 +429,8 @@ function viewLog(id) {
     ${techHTML?`<div><p class="form-label">習った技</p><div class="log-techniques" style="margin-bottom:14px;">${techHTML}</div></div>`:''}
     ${log.sparring?`<div><p class="form-label">スパーリング</p><p style="font-size:14px;margin-bottom:14px;">${log.sparring}</p></div>`:''}
     ${log.memo?`<div><p class="form-label">メモ</p><p style="font-size:14px;line-height:1.7;margin-bottom:14px;">${log.memo}</p></div>`:''}
-    <div style="display:flex;gap:8px;margin-top:8px;">
+    <div id="ai-summary-result" style="display:none;background:rgba(201,168,76,0.06);border:1px solid var(--gold-dim);border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.7;"></div>
+    <button type="button" class="btn btn-ghost" style="width:100%;margin-bottom:8px;border-color:var(--gold-dim);color:var(--gold);" data-ai-summary="${log.id}">🤖 AIで練習を振り返る</button>
       <button type="button" class="btn btn-ghost" style="flex:1;" data-edit-log="${log.id}">編集</button>
       <button type="button" class="btn btn-danger" style="flex:1;" data-delete-log="${log.id}">削除</button>
     </div>
@@ -467,7 +524,7 @@ function editTech(id) {
 function render() {
   if (currentPage === 'log') renderLogs();
   else if (currentPage === 'tech') renderTechs();
-  else if (currentPage === 'dash') renderDash();
+  else if (currentPage === 'dash') { renderDash(); renderGrowth(); }
   else if (currentPage === 'master') renderMaster();
 }
 
@@ -562,6 +619,203 @@ function renderDash() {
   ).join('') : '<p style="color:var(--muted);font-size:13px;">データがありません</p>';
 }
 
+function renderGrowth() {
+  // Growth insights
+  const streak = calcStreak();
+  const insights = document.getElementById('growth-insights');
+  insights.innerHTML = `
+    <div class="form-label" style="margin-bottom:10px;">上達インサイト</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="text-align:center;">
+        <div style="font-size:24px;font-weight:800;color:var(--gold);">${streak}<span style="font-size:12px;color:var(--muted);font-weight:400;"> 日</span></div>
+        <div class="form-label" style="margin-top:2px;">連続練習</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:24px;font-weight:800;color:var(--white);">${calcAvgInterval()}<span style="font-size:12px;color:var(--muted);font-weight:400;"> 日</span></div>
+        <div class="form-label" style="margin-top:2px;">平均練習間隔</div>
+      </div>
+    </div>`;
+
+  // Cumulative hours chart
+  const sorted2 = [...state.logs].sort((a,b)=>a.date.localeCompare(b.date));
+  let cumMins = 0;
+  const cumData = sorted2.map(l => { cumMins += (l.duration||0); return { date: l.date, h: cumMins/60 }; });
+  if (cumData.length >= 2) {
+    const maxH = cumData[cumData.length-1].h || 1;
+    const svgW2 = 300; const svgH2 = 80; const padL2 = 30; const padB2 = 16;
+    const pts = cumData.map((d,i) => {
+      const x = padL2 + (i / (cumData.length-1)) * (svgW2 - padL2 - 8);
+      const y = svgH2 - padB2 - ((d.h / maxH) * (svgH2 - padB2 - 8));
+      return `${x},${y}`;
+    }).join(' ');
+    const lastPt = pts.split(' ').pop().split(',');
+    document.getElementById('chart-cumulative').innerHTML = `<svg width="100%" viewBox="0 0 ${svgW2} ${svgH2+4}" xmlns="http://www.w3.org/2000/svg">
+      <text x="${padL2-2}" y="${svgH2-padB2}" text-anchor="end" fill="#6b7a8d" font-size="9">0h</text>
+      <text x="${padL2-2}" y="10" text-anchor="end" fill="#6b7a8d" font-size="9">${maxH.toFixed(0)}h</text>
+      <polyline points="${pts}" fill="none" stroke="rgba(201,168,76,0.7)" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3" fill="var(--gold)"/>
+      <text x="${svgW2-6}" y="${svgH2}" text-anchor="end" fill="#6b7a8d" font-size="9">${cumData[cumData.length-1].date.slice(5)}</text>
+      <text x="${padL2}" y="${svgH2}" fill="#6b7a8d" font-size="9">${cumData[0].date.slice(5)}</text>
+    </svg>`;
+  } else {
+    document.getElementById('chart-cumulative').innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0;">データが2件以上になると表示されます</p>';
+  }
+
+  // Top 5 techniques
+  const techRanking = state.techniques.map(t => ({ name: t.name, count: practiceCount(t.id), cat: t.category }))
+    .filter(t => t.count > 0).sort((a,b) => b.count - a.count).slice(0,5);
+  const maxCount2 = techRanking[0]?.count || 1;
+  document.getElementById('stat-top-techs').innerHTML = techRanking.length ? techRanking.map((t,i) => {
+    const cat = CATEGORIES[t.cat]||CATEGORIES.other;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <span style="font-size:11px;color:var(--muted);width:14px;text-align:right;">${i+1}</span>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:13px;">${t.name}</span>
+          <span style="font-size:11px;color:var(--muted);">${t.count}回</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:4px;height:5px;">
+          <div style="background:var(--gold-dim);height:5px;border-radius:4px;width:${Math.round(t.count/maxCount2*100)}%;"></div>
+        </div>
+      </div>
+      <span class="belt-badge ${cat.cls}" style="font-size:10px;padding:2px 6px;">${cat.label}</span>
+    </div>`;
+  }).join('') : '<p style="color:var(--muted);font-size:12px;">練習済みの技がありません</p>';
+}
+
+function renderMaster() {
+  const el = document.getElementById('class-list');
+  el.innerHTML = state.classes.length ? state.classes.map(c=>
+    `<div class="class-chip-row"><span style="font-size:14px;">${c}</span><button type="button" class="btn btn-danger btn-sm" data-delete-class="${c}">削除</button></div>`
+  ).join('') : '<p style="color:var(--muted);font-size:13px;padding:8px 0;">クラスが登録されていません</p>';
+}
+
+function calcStreak() {
+  if (!state.logs.length) return 0;
+  const dates = [...new Set(state.logs.map(l=>l.date))].sort().reverse();
+  const today = new Date().toISOString().slice(0,10);
+  let streak = 0; let cur = today;
+  for (const d of dates) {
+    if (d === cur) { streak++; const dt = new Date(cur+'T00:00:00'); dt.setDate(dt.getDate()-1); cur = dt.toISOString().slice(0,10); }
+    else if (d < cur) break;
+  }
+  return streak;
+}
+
+function calcAvgInterval() {
+  const dates = [...new Set(state.logs.map(l=>l.date))].sort();
+  if (dates.length < 2) return '-';
+  let total = 0;
+  for (let i=1;i<dates.length;i++) total += (new Date(dates[i]+'T00:00:00') - new Date(dates[i-1]+'T00:00:00')) / 86400000;
+  return (total / (dates.length-1)).toFixed(1);
+}
+
+// ── AI Functions ──────────────────────────────────────────────────
+async function callAI(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+  });
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+async function aiSummarizeLog(logId) {
+  const log = state.logs.find(l => l.id === logId);
+  if (!log) return;
+  const techNames = (log.techniques||[]).map(id => state.techniques.find(t=>t.id===id)?.name).filter(Boolean).join('、');
+  const resultEl = document.getElementById('ai-summary-result');
+  const btn = document.querySelector(`[data-ai-summary="${logId}"]`);
+  if (!btn) return;
+  btn.disabled = true; btn.textContent = '⏳ 分析中...';
+  resultEl.style.display = 'none';
+
+  const prompt = `あなたはBJJコーチです。以下の練習記録を分析し、簡潔に振り返りをまとめてください。
+
+日付: ${log.date}
+クラス: ${log.className || '未記録'}
+練習時間: ${log.duration ? log.duration+'分' : '未記録'}
+習った技: ${techNames || 'なし'}
+スパーリング: ${log.sparring || 'なし'}
+メモ: ${log.memo || 'なし'}
+
+以下の形式で日本語で出力してください（簡潔に）：
+【今日の課題】
+・（メモから読み取れる課題を1〜2点）
+
+【次回に活かすポイント】
+・（具体的なアドバイスを1〜2点）
+
+【一言コメント】
+（励ましや気づきを一文で）`;
+
+  try {
+    const reply = await callAI(prompt);
+    resultEl.innerHTML = reply.split('\n').map(l => {
+      l = l.trim(); if (!l) return '<br>';
+      if (l.startsWith('【')) return `<div style="color:var(--gold);font-weight:700;margin:8px 0 3px;">${l}</div>`;
+      if (l.startsWith('・')) return `<div style="padding-left:12px;margin-bottom:2px;">・${l.slice(1).trim()}</div>`;
+      return `<div>${l}</div>`;
+    }).join('');
+    resultEl.style.display = 'block';
+    btn.textContent = '🔄 再分析する';
+  } catch(e) {
+    btn.textContent = '❌ エラー。再試行';
+  }
+  btn.disabled = false;
+}
+
+async function aiGrowthAnalysis() {
+  const btn = document.getElementById('ai-growth-btn');
+  const resultEl = document.getElementById('ai-growth-result');
+  btn.disabled = true; btn.textContent = '⏳ 分析中...';
+  resultEl.style.display = 'none';
+
+  const totalMins = state.logs.reduce((s,l)=>s+(l.duration||0),0);
+  const techRanking = state.techniques.map(t=>({name:t.name,count:practiceCount(t.id)})).filter(t=>t.count>0).sort((a,b)=>b.count-a.count).slice(0,5);
+  const recentLogs = [...state.logs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const recentMemos = recentLogs.map(l=>`${l.date}: ${l.memo||'メモなし'}`).join('\n');
+  const staleCount = state.techniques.filter(t=>daysSince(lastPracticed(t.id))>14).length;
+
+  const prompt = `あなたはBJJコーチです。以下の練習データを分析し、成長傾向と今後のアドバイスをまとめてください。
+
+【練習データ】
+総練習時間: ${(totalMins/60).toFixed(1)}時間 / ${state.logs.length}回
+習得技数: ${state.techniques.length}技（うち練習済み: ${state.techniques.filter(t=>practiceCount(t.id)>0).length}技）
+最近ご無沙汰の技: ${staleCount}技
+最もよく練習した技: ${techRanking.map(t=>t.name+'('+t.count+'回)').join('、') || 'なし'}
+
+【直近5回の練習メモ】
+${recentMemos}
+
+以下の形式で日本語で出力してください：
+【成長傾向の分析】
+・（データから読み取れること）
+
+【強みと課題】
+・（強み）
+・（課題）
+
+【今後1ヶ月のアドバイス】
+・（具体的なアドバイスを2〜3点）`;
+
+  try {
+    const reply = await callAI(prompt);
+    resultEl.innerHTML = reply.split('\n').map(l => {
+      l = l.trim(); if (!l) return '<br>';
+      if (l.startsWith('【')) return `<div style="color:var(--gold);font-weight:700;margin:10px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--border);">${l}</div>`;
+      if (l.startsWith('・')) return `<div style="padding-left:12px;margin-bottom:4px;">・${l.slice(1).trim()}</div>`;
+      return `<div>${l}</div>`;
+    }).join('');
+    resultEl.style.display = 'block';
+    btn.textContent = '🔄 再分析する';
+  } catch(e) {
+    btn.textContent = '❌ エラー。再試行';
+  }
+  btn.disabled = false;
+}
+
 function renderMaster() {
   const el = document.getElementById('class-list');
   el.innerHTML = state.classes.length ? state.classes.map(c=>
@@ -573,6 +827,7 @@ function renderMaster() {
 document.addEventListener('click', function(e) {
   const t = e.target;
 
+  if (t.closest('#nav-chat'))   { showPage('chat'); return; }
   // Nav
   if (t.closest('#nav-log'))    { showPage('log'); return; }
   if (t.closest('#nav-tech'))   { showPage('tech'); return; }
@@ -600,6 +855,9 @@ document.addEventListener('click', function(e) {
   if (logCard) { viewLog(Number(logCard.dataset.viewLog)); return; }
   const techCard = t.closest('[data-view-tech]');
   if (techCard) { viewTech(Number(techCard.dataset.viewTech)); return; }
+
+  if (t.dataset.aiSummary) { aiSummarizeLog(Number(t.dataset.aiSummary)); return; }
+  if (t.id === 'ai-growth-btn') { aiGrowthAnalysis(); return; }
 
   // Edit
   if (t.dataset.editLog)  { editLog(Number(t.dataset.editLog)); return; }
@@ -712,7 +970,108 @@ function initAutocomplete() {
   });
 }
 
+// ── Chat ─────────────────────────────────────────────────────────
+const CHAT_SUGGESTIONS = [
+  'クローズドガードからの攻め方',
+  '三角絞めの掛け方',
+  'マウントから逃げる方法',
+  'デラヒーバガードとは？',
+  'バックを取った後の絞め方',
+  'ハーフガードからのスイープ',
+  'ギロチンの防ぎ方',
+];
+const CHAT_SYSTEM = `あなたはブラジリアン柔術（BJJ）の専門家コーチです。日本語で簡潔かつ実践的に答えてください。重要なポイントは【ポイント】として示し、手順は「・」で箇条書きにし、コツや注意点があれば「コツ：」として追記してください。プレーンテキストで返してください。`;
+let chatMessages = [];
+let chatLoading = false;
+
+function initChat() {
+  const chips = document.getElementById('chat-chips');
+  CHAT_SUGGESTIONS.forEach(s => {
+    const b = document.createElement('button');
+    b.style.cssText = 'white-space:nowrap;padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;cursor:pointer;flex-shrink:0;font-family:inherit;';
+    b.textContent = s;
+    b.addEventListener('click', () => chatSend(s));
+    chips.appendChild(b);
+  });
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    sendBtn.disabled = !input.value.trim() || chatLoading;
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) chatSend(input.value.trim()); }
+  });
+  sendBtn.addEventListener('click', () => { if (!sendBtn.disabled) chatSend(input.value.trim()); });
+}
+
+function chatSend(text) {
+  if (!text || chatLoading) return;
+  const input = document.getElementById('chat-input');
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('chat-send').disabled = true;
+  document.getElementById('chat-empty').style.display = 'none';
+  chatAppend('user', text);
+  chatMessages.push({ role: 'user', content: text });
+  const typing = chatTyping();
+  chatLoading = true;
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: CHAT_SYSTEM, messages: chatMessages })
+  })
+  .then(r => r.json())
+  .then(data => { const reply = data.content[0].text; typing.remove(); chatAppend('ai', reply); chatMessages.push({ role: 'assistant', content: reply }); })
+  .catch(() => { typing.remove(); chatAppend('ai', 'エラーが発生しました。もう一度お試しください。'); })
+  .finally(() => { chatLoading = false; document.getElementById('chat-send').disabled = !document.getElementById('chat-input').value.trim(); });
+}
+
+function chatFormatText(text) {
+  return text.split('\n').map(line => {
+    line = line.trim(); if (!line) return '<br>';
+    if (line.startsWith('【') && line.includes('】')) return `<div style="color:var(--gold);font-weight:700;font-size:13px;margin:10px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--border);">${line}</div>`;
+    if (line.startsWith('コツ：') || line.startsWith('注意：')) return `<div style="background:rgba(201,168,76,0.08);border-left:3px solid var(--gold-dim);border-radius:0 6px 6px 0;padding:8px 10px;margin-top:10px;font-size:12.5px;color:#c8b87a;">${line}</div>`;
+    if (line.startsWith('・')) return `<li style="margin-bottom:4px;">${line.slice(1).trim()}</li>`;
+    return `<span>${line}</span><br>`;
+  }).join('').replace(/(<li[^>]*>.*?<\/li>)+/gs, m => `<ul style="padding-left:16px;margin:6px 0;">${m}</ul>`);
+}
+
+function chatAppend(role, text) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex;gap:8px;align-items:flex-start;${role==='user'?'flex-direction:row-reverse;':''}`;
+  const avatar = document.createElement('div');
+  avatar.style.cssText = `width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px;${role==='user'?'background:var(--gold-dim);color:var(--bg);font-weight:700;':'background:var(--surface2);border:1px solid var(--border);'}`;
+  avatar.textContent = role === 'user' ? 'K' : '🥋';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `max-width:82%;padding:10px 13px;border-radius:12px;line-height:1.65;font-size:13.5px;${role==='user'?'background:#1e2d1e;border:1px solid #2a442a;border-top-right-radius:3px;color:#c8e6c8;':'background:#1a2233;border:1px solid var(--border);border-top-left-radius:3px;'}`;
+  if (role === 'ai') bubble.innerHTML = chatFormatText(text);
+  else bubble.textContent = text;
+  div.appendChild(avatar); div.appendChild(bubble);
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+function chatTyping() {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:flex-start;';
+  const avatar = document.createElement('div');
+  avatar.style.cssText = 'width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:var(--surface2);border:1px solid var(--border);';
+  avatar.textContent = '🥋';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = 'padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;';
+  bubble.innerHTML = `<div style="display:flex;gap:4px;align-items:center;"><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;animation:bounce 1.2s infinite;"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;animation:bounce 1.2s infinite 0.2s;"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;animation:bounce 1.2s infinite 0.4s;"></span></div>`;
+  div.appendChild(avatar); div.appendChild(bubble);
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
 load();
+initChat();
 initAutocomplete();
 showPage('log');
 </script>
